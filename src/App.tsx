@@ -1,34 +1,58 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import './App.css'
+import { debounce } from "lodash";
+import { useEffect, useRef, useState } from "react";
+import "./App.css";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const query = useRef<HTMLInputElement>(null);
+  const [allBookmarks, setAllBookMarks] = useState<
+    chrome.bookmarks.BookmarkTreeNode[]
+  >([]);
+  const [filteredBookmarks, setFilteredBookmarks] = useState<
+    chrome.bookmarks.BookmarkTreeNode[]
+  >([]);
+  const [searchText, setSearchText] = useState("");
+
+  useEffect(() => {
+    chrome.bookmarks.search({}, (bookmarkItems) => {
+      setAllBookMarks(bookmarkItems.filter((item) => "url" in item));
+    });
+  }, []);
+
+  useEffect(() => {
+    const debounced = debounce(() => {
+      const regexp = new RegExp(`.*${searchText}.*`);
+      setFilteredBookmarks(
+        allBookmarks.filter((bookmark) => {
+          return regexp.test(bookmark.title);
+        })
+      );
+    }, 100);
+    debounced();
+    return () => {
+      debounced.cancel();
+    };
+  }, [allBookmarks, searchText]);
 
   return (
     <div className="App">
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <input
+        autoFocus={true}
+        type="text"
+        ref={query}
+        onChange={(e) => setSearchText(e.target.value)}
+        onKeyPress={(e) => {
+          if (e.key === "Enter") {
+            for (const bookmark of filteredBookmarks) {
+              chrome.tabs.create({ url: bookmark.url });
+            }
+          }
+        }}
+      />
+      {filteredBookmarks.map((bookmark) => {
+        return <p key={bookmark.id}>{bookmark.title}</p>;
+      })}
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
