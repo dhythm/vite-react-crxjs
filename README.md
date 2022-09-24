@@ -19,4 +19,6 @@ npm i -D @crxjs/vite-plugin @types/chrome --legacy-peer-deps
 
 ```sh
 npm install
+npm run dev
+npm run build
 ```
