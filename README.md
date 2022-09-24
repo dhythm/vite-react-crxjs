@@ -11,6 +11,8 @@ npm init vite@latest
 cd vite-react-crxjs
 npm install
 npm i -D @crxjs/vite-plugin @types/chrome --legacy-peer-deps
+
+# update vite.config.ts
 ```
 
 ## Getting Started
